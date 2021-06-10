@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <title>pulsejet-ts</title>
+  </head>
+  <body>
+    <span id="spanIntro">DnD a pulsejet binary file or just enjoy the wow.pulsejet (6,826 bytes compressed, 3.42 seconds)</span><br />
+    <span id="spanStat"></span><br />
+    <button id="buttonPlay" value="Play">Play</button>
+
+    <script type="module">
+      import * as PULSEJET from './dist/pulsejet.module.js';
+
+      const audio = new AudioContext();
+
+      let audioBuffer;
+      let bufferSourceNode;
+
+      async function loadWowPulsejet() {
+        const res = await fetch( './wow.pulsejet' );
+        const buffer = await res.arrayBuffer();
+        return buffer;
+      }
+
+      function load( buffer ) {
+        const array = new Uint8Array( buffer );
+
+        spanStat.innerText = 'Decoding... (It\'s slow and synchronous 😇)';
+
+        setTimeout( () => {
+          const begin = performance.now();
+          const samples = PULSEJET.decode( array );
+          const end = performance.now();
+
+          audioBuffer = audio.createBuffer( 1, samples.length, 44100 );
+          audioBuffer.copyToChannel( samples, 0 );
+
+          spanStat.innerText = `Done (${ ( end - begin ).toFixed( 1 ) } ms)`;
+        }, 100 );
+      }
+
+      loadWowPulsejet().then( load );
+
+      buttonPlay.addEventListener( 'click', () => {
+        if ( audioBuffer != null ) {
+          if ( bufferSourceNode != null ) {
+            bufferSourceNode.stop();
+            bufferSourceNode = null;
+          }
+
+          bufferSourceNode = audio.createBufferSource();
+          bufferSourceNode.connect( audio.destination );
+          bufferSourceNode.buffer = audioBuffer;
+          bufferSourceNode.start();
+        }
+      } );
+
+      window.addEventListener( 'dragover', ( event ) => {
+        event.preventDefault();
+      } );
+
+      window.addEventListener( 'drop', ( event ) => {
+        event.preventDefault();
+
+        const file = event.dataTransfer.files[ 0 ];
+        file.arrayBuffer().then( load );
+      } );
+    </script>
+  </body>
+</html>
