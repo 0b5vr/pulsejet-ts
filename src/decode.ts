@@ -144,7 +144,7 @@ export function decode( input: Uint8Array ): Float32Array {
   }
 
   // Copy samples without padding to the output buffer
-  samples.set( new Float32Array( paddedSamples.buffer, frameSize, numSamples ) );
+  samples.set( new Float32Array( paddedSamples.buffer, 4 * frameSize, numSamples ) );
 
   // Free padded sample buffer
   // delete [] paddedSamples;
